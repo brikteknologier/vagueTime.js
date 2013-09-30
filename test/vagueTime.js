@@ -71,6 +71,33 @@
                 }), 'just now');
             });
 
+            test('get returns 59 second remaining when time is 1 second ago', function () {
+                assert.strictEqual(vagueTime.get({
+                    from: 1234567890,
+                    to: 1234567889,
+                    units: 's',
+                    remaining: true
+                }).remaining, 59 * 1000);
+            });
+
+            test('get returns 1 second remaining when time is 59 second ago', function () {
+                assert.strictEqual(vagueTime.get({
+                    from: 1234567890,
+                    to: 1234567831,
+                    units: 's',
+                    remaining: true
+                }).remaining, 1 * 1000);
+            });
+
+            test('get returns 1 hour remaining when time is 3,600 seconds ago', function () {
+                assert.strictEqual(vagueTime.get({
+                    from: 1234567890,
+                    to: 1234564290,
+                    units: 's',
+                    remaining: true
+                }).remaining, 60 * 60 * 1000);
+            });
+
             test('get returns just now when time is 59 seconds ago', function () {
                 assert.strictEqual(vagueTime.get({
                     from: 1234567890,

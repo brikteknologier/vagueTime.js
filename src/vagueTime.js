@@ -73,13 +73,18 @@
      *
      * Returns a vague time, such as '3 weeks ago', 'just now' or 'in 2 hours'.
      *
-     * @option [from] {Date}    The origin time. Defaults to `Date.now()`.
-     * @option [to] {Date}      The target time. Defaults to `Date.now()`.
-     * @option [units] {string} If `from` or `to` are timestamps rather than date
-     *                          instances, this indicates the units that they are
-     *                          measured in. Can be either `ms` for milliseconds
-     *                          or `s` for seconds. Defaults to `ms`.
-     * @option [lang] {string}  The output language. Defaults to `en`.
+     * @option [from] {Date}      The origin time. Defaults to `Date.now()`.
+     * @option [to] {Date}        The target time. Defaults to `Date.now()`.
+     * @option [units] {string}   If `from` or `to` are timestamps rather than date
+     *                            instances, this indicates the units that they are
+     *                            measured in. Can be either `ms` for milliseconds
+     *                            or `s` for seconds. Defaults to `ms`.
+     * @option [lang] {string}    The output language. Defaults to `en`.
+     * @option [remaining] {bool} If set, the function returns { timeString:
+     *                            [vague time], remaining: [interval in milliseconds]}
+     *                            The "remaining" time interval is the time left
+     *                            until the vague time changes. Use this to keep
+     *                            a vague time continuously updated.
      */
     function getVagueTime (options) {
         var units = normaliseUnits(options.units),
@@ -87,7 +92,8 @@
             from = normaliseTime(options.from, units, now),
             to = normaliseTime(options.to, units, now),
             difference = from - to,
-            type;
+            type,
+            estimated;
 
         if (difference > 0) {
             type = 'past';
@@ -96,7 +102,9 @@
             difference = -difference;
         }
 
-        return estimate(difference, type, options.lang);
+        estimated = estimate(difference, type, options.lang);
+        if (options.remaining) return estimated;
+        else return estimated.timeString;
     }
 
     function normaliseUnits (units) {
@@ -140,16 +148,24 @@
     }
 
     function estimate (difference, type, language) {
-        var time, vagueTime, lang = languages[language] || languages.en;
+        var time, vagueTime, remaining, lang = languages[language] || languages.en;
 
         for (time in times) {
             if (times.hasOwnProperty(time) && difference >= times[time]) {
                 vagueTime = Math.floor(difference / times[time]);
-                return lang[type](vagueTime, lang[time][(vagueTime > 1)+0]);
+                remaining = times[time] - (difference % times[time]);
+                return {
+                    timeString: lang[type](vagueTime, lang[time][(vagueTime > 1)+0]),
+                    remaining: remaining
+                };
             }
         }
 
-        return lang.defaults[type];
+        var leastInterval = times.minute;
+        return {
+            timeString: lang.defaults[type],
+            remaining: leastInterval - (difference % leastInterval)
+        };
     }
 
     function exportFunctions () {
